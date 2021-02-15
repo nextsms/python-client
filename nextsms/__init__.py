@@ -1,27 +1,66 @@
 import sys
 import requests
 from base64 import b64encode
-from typing import List, Dict, Union
 from collections import namedtuple
+from typing import List, Dict, Union, Iterable
 
 
 class NextSms(object):
 
-    BASE_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/single'
-    BASE_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/multi'
+    SANDBOX_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/single'
+    SANDBOX_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/multi'
+    PRODUCTION_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/text/single'
+    PRODUCTION_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/text/multi'
 
+    _sandbox = False
     User = namedtuple('User', 'username password secret_key')
 
-    def __init__(self, username: str = '', password: str = '') -> None:
+    def __init__(self, username: str = '', password: str = '', sandbox=False) -> None:
         """Initialize nextsms access credentials
 
         Args:
             username (str): your username for nextsms
             password (str): your login password for nextsms
         """
+        self.sandbox = sandbox
         self._user = (None
                       if not all(username and password)
                       else self.create_user(username, password))
+
+    @property
+    def sandbox(self) -> bool:
+        """Return the state of the sandbox environment whether its active or inactive
+
+        Returns:
+            bool: True if sandbox environment is active, False if not
+        """
+        return self._sandbox
+
+    @sandbox.setter
+    def sandbox(self, is_active: bool) -> None:
+        """Set sandbox environment to active or inactive
+
+        Args:
+            is_active (bool): State of the sandbox environment (True|False)
+
+        Raises:
+            TypeError: If is_active is not of <class 'bool'>
+
+        Example:
+            >> import nextsms
+            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+            >> sender.sandbox = True 
+        """
+        if not isinstance(is_active, bool):
+            raise TypeError(
+                f"sandbox should of of type <class 'bool'> not {type(is_active)}")
+
+        if is_active:
+            self.base_url_single = self.SANDBOX_URL_SINGLE
+            self.base_url_multiple = self.SANDBOX_URL_MULTIPLE
+        else:
+            self.base_url_single = self.PRODUCTION_URL_SINGLE
+            self.base_url_multiple = self.PRODUCTION_URL_MULTIPLE
 
     def initialize(self, username: str, password: str) -> None:
         """Initialize nextsms access credentials
@@ -32,7 +71,7 @@ class NextSms(object):
         """
         self._user = self.create_user(username, password)
 
-    def create_user(self, username: str, password: str) -> User:
+    def create_user(self, username: str, password: str) -> Iterable:
         """Create a namedtuple of user credentials
 
         Args:
