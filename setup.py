@@ -2,10 +2,10 @@ from distutils.core import setup
 
 setup(
     name="nextsms",
-    version="0.1",
+    version="0.2",
     description='Python package to easy integration with NextSms API for bulksms',
     url='https://github.com/Kalebu/nextsms',
-    download_url="https://github.com/Kalebu/nextsms/archive/0.1.tar.gz",
+    download_url="https://github.com/Kalebu/nextsms/archive/0.2.tar.gz",
     author="Jordan Kalebu",
     author_email="isaackeinstein@gmail.com",
     license="MIT",
