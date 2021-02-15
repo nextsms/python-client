@@ -65,11 +65,11 @@ By default as you can create a nextsms instance it configure the environment to 
 Wanna Contribute ?
 ------------------
 Just 
-    - Fork it 
-    - Create a new branch 
-    - Do your changes 
-    - Make a Pull request
-    - You're merged congrats .!!!
+- Fork it 
+- Create a new branch 
+- Do your changes 
+- Make a Pull request
+- You're merged congrats .!!!
 
 
 Give it a star 
