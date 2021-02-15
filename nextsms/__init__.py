@@ -12,13 +12,40 @@ class NextSms(object):
 
     User = namedtuple('User', 'username password secret_key')
 
-    def __init__(self) -> None:
-        self._user = None
+    def __init__(self, username: str = '', password: str = '') -> None:
+        """Initialize nextsms access credentials
+
+        Args:
+            username (str): your username for nextsms
+            password (str): your login password for nextsms
+        """
+        self._user = (None
+                      if not all(username and password)
+                      else self.create_user(username, password))
 
     def initialize(self, username: str, password: str) -> None:
+        """Initialize nextsms access credentials
+
+        Args:
+            username (str): your username for nextsms
+            password (str): your login password for nextsms
+        """
         self._user = self.create_user(username, password)
 
-    def create_user(self, username, password) -> User:
+    def create_user(self, username: str, password: str) -> User:
+        """Create a namedtuple of user credentials
+
+        Args:
+            username ([type]): username for nextms
+            password ([type]): password for nextsms
+
+        Raises:
+            TypeError: if username in not of type <class 'str'>
+            TypeError: if password in not of type <class 'str'>
+
+        Returns:
+            User: namedtuple datascture to hold user details (username, password, secret_key)
+        """
         if not isinstance(username, str):
             raise TypeError(
                 f"username should be of type <class 'str'> not {type(username)}")
@@ -32,6 +59,14 @@ class NextSms(object):
         )
 
     def create_header(self) -> Dict:
+        """Auto generate json headers to be used in request
+
+        Raises:
+            Exception: If user credentials are not specified
+
+        Returns:
+            Dict: headers to be used on post requests
+        """
         if not self._user:
             raise Exception(
                 '''
@@ -47,7 +82,28 @@ class NextSms(object):
             'Authorization': f'Basic {self._user.secret_key}'
         }
 
-    def send_sms(self, message: str, recipients: Union[str, List], sender_id: str = "NEXTSMS") -> Dict:
+    def sendsms(self, message: str, recipients: Union[str, List[str]], sender_id: str = "NEXTSMS") -> Dict:
+        """Method to send sms using nextsms gateway
+
+        Args:
+            message (str): message to be sent 
+            recipients (Union[str, List[str]]): A string of a single number or List of multiple recipients
+            sender_id (str, optional): your Sender ID Defaults to "NEXTSMS".
+
+        Raises:
+            TypeError: If message is not type of <class 'str'>
+            TypeError: If recipients is not type of <class 'str'> or <class 'list'>
+            TypeError: If message is not type of <class 'str'>
+
+        Returns:
+            Dict: Response from the nextsms gateway
+
+        Example:
+
+            >> import nextsms 
+            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+            >> sender.sendsms('hello', '255757294146', 'Neurotech')
+        """
         if not isinstance(sender_id, str):
             raise TypeError(
                 f"sender_id should of type <class 'str'> not {type(sender_id)}")
@@ -67,12 +123,28 @@ class NextSms(object):
                 'text': message
             }).json()
 
-    def send_bulk(self, messages: List, sender_id: str = "NEXTSMS"):
+    def send_bulk(self, messages: List[Dict]) -> Dict:
+        """[summary]
 
-        if not isinstance(sender_id, str):
-            raise TypeError(
-                f"sender_id should be of type <class 'str'> not {type(sender_id)}")
+        Args:
+            messages (List[Dict]): List of message objects to be sent 
 
+        Raises:
+            TypeError: if messages is not of type <class 'list'>
+
+        Returns:
+            Dict: NextSMS Response
+
+
+        Example:
+
+            >> import nextsms
+            >> sender = nextsms('KalebuJordan', 'kalebu@opensource') 
+            >> messages = [
+                {'from':'NEXTSMS', 'to':'255757294146', 'text':'hello'},
+                {'from':'NEXTSMS', 'to':'255754205561', 'text':'hello'}]           
+            >> sender.send_bulk(messages)
+        """
         if not isinstance(messages, list):
             raise TypeError(
                 f"messages should be of type <class 'list'> not type {type(messages)}")
@@ -86,4 +158,4 @@ class NextSms(object):
         ).json()
 
 
-sys.modules[__name__] = NextSms()
+sys.modules[__name__] = NextSms
