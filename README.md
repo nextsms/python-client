@@ -28,7 +28,7 @@ Here is an example on how to send an SMS with this package;
 
 >> import nextsms
 >> sender = nextsms('your username', 'your password')
->> sender.sendsms(message='hello', recipients=['075XXXXX',['065XXXX'])
+>> sender.sendsms(message='hello', recipients=['075XXXXX',['065XXXX'], sender_id="NEXTSMS")
 
 ```
 

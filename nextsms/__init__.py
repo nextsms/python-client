@@ -154,7 +154,7 @@ class NextSms(object):
                 f"message should be of type <class 'str'> not {type(message)}")
 
         return requests.post(
-            self.BASE_URL_SINGLE,
+            self.base_url_single,
             headers=self.create_header(),
             json={
                 'from': sender_id,
@@ -189,7 +189,7 @@ class NextSms(object):
                 f"messages should be of type <class 'list'> not type {type(messages)}")
 
         return requests.post(
-            self.BASE_URL_MULTIPLE,
+            self.base_url_multiple,
             headers=self.create_header(),
             json={
                 'messages': messages
