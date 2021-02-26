@@ -1,4 +1,9 @@
-# nextsms
+# [nextsms](https://pypi.org/project/nextsms)
+
+[![Downloads](https://pepy.tech/badge/nextsms)](https://pepy.tech/project/nextsms)
+[![Downloads](https://pepy.tech/badge/nextsms/month)](https://pepy.tech/project/nextsms)
+[![Downloads](https://pepy.tech/badge/nextsms/week)](https://pepy.tech/project/nextsms)
+
 Python Package to easy the integration with nextsms SMS Gateway
 
 Getting started 
