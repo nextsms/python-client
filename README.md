@@ -6,6 +6,8 @@
 
 Python Package to easy the integration with nextsms SMS Gateway
 
+[![Become a patron](pictures/become_a_patron_button.png)](https://www.patreon.com/kalebujordan)
+
 Getting started 
 ---------------
 
@@ -21,7 +23,7 @@ Installing directly from github
 
 Clone this repository or Download a zip of the package  and then do this;
 
-```
+```bash
 git clone https://github.com/Kalebu/nextsms
 cd nextsms 
 nextsms -> python setup.py install 
@@ -94,7 +96,7 @@ Issues
 
 Encountered issues while using the package, raise an issue and then we gonna work to fix it as soon as it takes
 
-```
+```bash
 More features coming soon
 ```
 
