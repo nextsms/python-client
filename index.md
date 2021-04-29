@@ -1,37 +1,86 @@
-## Welcome to GitHub Pages
+# [nextsms](https://pypi.org/project/nextsms)
 
-You can use the [editor on GitHub](https://github.com/nextsms/nextsms/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Python Package to easy the integration with nextsms SMS Services
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+[![Become a patron](pictures/become_a_patron_button.png)](https://www.patreon.com/kalebujordan)
 
-### Markdown
+## Getting started
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+In order to use this package you need to have the NextSMS Account, If you don't have one please take a look at [NextSMS](https://nextsms.co.tz), and get your *username* and *password* we gonna use them down below;
 
-```markdown
-Syntax highlighted code block
+### Install the libary from pip or directly
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```bash
+pip install nextsms
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+### Installing directly from github
 
-### Jekyll Themes
+Clone this repository or Download a zip of the package  and then do this;
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/nextsms/nextsms/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+```bash
+git clone https://github.com/Kalebu/nextsms
+cd nextsms 
+nextsms -> python setup.py install 
+```
 
-### Support or Contact
+## Sending SMS with nextsms
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Here is an example on how to send an SMS with this package;
+
+```python
+
+>> import nextsms
+>> sender = nextsms('your username', 'your password')
+>> sender.sendsms(message='hello', recipients=['25575XXXXX','25565XXXX'], sender_id="NEXTSMS")
+
+```
+
+## Bulky ?
+
+NextSms allows you to predefine all message you would like to send with variety of sender IDs and does the rest on how to successful send to all.
+
+Here an Example how you would do that with this package
+
+```python
+
+>> import nextsms
+>> sender = nextsms('KalebuJordan', 'kalebu@opensource') 
+>> messages = [
+    {'from':'NEXTSMS', 'to':'255757294146', 'text':'hello'},
+    {'from':'NEXTSMS', 'to':'255754205561', 'text':'hello'}]           
+>> sender.send_bulk(messages)
+
+```
+
+## Environment
+
+By default as you can create a nextsms instance it configure the environment to use production urls, If you wanna do on test sandbox here how;
+
+```python
+
+>> import nextsms
+>> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+>> sender.sandbox = True 
+
+```
+
+## Wanna Contribute ?
+
+Just
+
+- Fork it 
+- Create a new branch 
+- Do your changes 
+- Make a Pull request
+- You're merged congrats .!!!
+
+## Issues 
+
+Encountered issues while using the package, raise an issue and then we gonna work to fix it as soon as it takes or you can email directly at isaackeinstein (at) gmail.com
+
+More features coming soon
+
+All the Credits to [kalebu](github.com/kalebu)
+
+Back to [Home](http://kalebu.github.io/) 
