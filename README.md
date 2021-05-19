@@ -1,4 +1,4 @@
-# [nextsms](https://pypi.org/project/nextsms)
+# [Nextsms Python Client](https://pypi.org/project/nextsms)
 
 [![Downloads](https://pepy.tech/badge/nextsms)](https://pepy.tech/project/nextsms)
 [![Downloads](https://pepy.tech/badge/nextsms/month)](https://pepy.tech/project/nextsms)
