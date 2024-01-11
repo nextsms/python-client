@@ -28,6 +28,7 @@ setup(
 
     install_requires=[
         'requests',
+        'phonenumbers',
     ],
 
     python_requires=">=3.6",
