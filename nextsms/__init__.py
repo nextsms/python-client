@@ -1,5 +1,6 @@
 import sys
 import requests
+import phonenumbers
 from base64 import b64encode
 from collections import namedtuple
 from typing import List, Dict, Union, Iterable
@@ -120,6 +121,32 @@ class NextSms(object):
             'Content-Type': 'application/json',
             'Authorization': f'Basic {self._user.secret_key}'
         }
+
+    def clean_phone_numbers(self, phone_numbers: List[str], country_code: str = 'TZ') -> List[str]:
+        """
+        Standardize phone numbers to E164 format 
+
+        Args:
+            phone_numbers (List[str]): List of phone numbers to be standardized
+            country_code (str, optional): Country code to be used. Defaults to 'TZ' 
+
+        Raises:
+            TypeError: If phone_number is not of type <class 'list'>
+
+        Returns:
+            List[str]: List of standardized phone numbers
+
+        Example:
+            >> import nextsms
+            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+            >> sender.clean_phone_numbers(['0757294146', '0754205561'])
+        """
+        if not isinstance(phone_number, list):
+            raise TypeError(
+                f"phone_number should be of type <class 'list'> not {type(phone_number)}")
+
+        return [phonenumbers.format_number(
+            phonenumbers.parse(number, country_code), phonenumbers.PhoneNumberFormat.E164) for number in phone_number]
 
     def sendsms(self, message: str, recipients: Union[str, List[str]], sender_id: str = "NEXTSMS") -> Dict:
         """Method to send sms using nextsms gateway
