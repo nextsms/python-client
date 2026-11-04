@@ -1,7 +1,13 @@
+import re
 import sys
 import requests
 from base64 import b64encode
 from typing import List, Dict, Union
+
+_SENDER_ID = re.compile(r"^[A-Za-z0-9]{1,11}$")
+_MSISDN = re.compile(r"^\d{10,15}$")
+_MAX_TEXT = 1600
+_BULK_KEYS = frozenset({"from", "to", "text"})
 
 
 class _Credentials:
@@ -163,22 +169,30 @@ class NextSms(object):
             >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
             >> sender.sendsms('hello', '255757294146', 'Neurotech')
         """
-        if not isinstance(sender_id, str):
-            raise TypeError(
-                f"sender_id should of type <class 'str'> not {type(sender_id)}")
-        if not isinstance(recipients, (str, list)):
+        if not isinstance(sender_id, str) or _SENDER_ID.fullmatch(sender_id) is None:
+            raise ValueError("sender_id should be 1 to 11 letters or digits")
+        if not isinstance(message, str) or message.strip() == "" or len(message) > _MAX_TEXT:
+            raise ValueError("message should be 1 to 1600 characters")
+        if isinstance(recipients, str):
+            if _MSISDN.fullmatch(recipients) is None:
+                raise ValueError("recipient should be 10 to 15 digits")
+            to = recipients
+        elif isinstance(recipients, list) and recipients:
+            to = []
+            for item in recipients:
+                if not isinstance(item, str) or _MSISDN.fullmatch(item) is None:
+                    raise ValueError("recipient should be 10 to 15 digits")
+                to.append(item)
+        else:
             raise TypeError(
                 f"recipient should be of type <class 'str'> or <class 'list'> not {type(recipients)}")
-        if not isinstance(message, str):
-            raise TypeError(
-                f"message should be of type <class 'str'> not {type(message)}")
 
         return requests.post(
             self.base_url_single,
             headers=self.create_header(),
             json={
                 'from': sender_id,
-                'to': recipients,
+                'to': to,
                 'text': message
             }).json()
 
@@ -204,15 +218,27 @@ class NextSms(object):
                 {'from':'NEXTSMS', 'to':'255754205561', 'text':'hello'}]           
             >> sender.send_bulk(messages)
         """
-        if not isinstance(messages, list):
+        if not isinstance(messages, list) or not messages:
             raise TypeError(
                 f"messages should be of type <class 'list'> not type {type(messages)}")
+
+        cleaned = []
+        for index, item in enumerate(messages):
+            if not isinstance(item, dict) or set(item) != _BULK_KEYS:
+                raise ValueError(f"messages[{index}] should have from, to and text only")
+            if not isinstance(item["from"], str) or _SENDER_ID.fullmatch(item["from"]) is None:
+                raise ValueError("sender_id should be 1 to 11 letters or digits")
+            if not isinstance(item["to"], str) or _MSISDN.fullmatch(item["to"]) is None:
+                raise ValueError("recipient should be 10 to 15 digits")
+            if not isinstance(item["text"], str) or item["text"].strip() == "" or len(item["text"]) > _MAX_TEXT:
+                raise ValueError("message should be 1 to 1600 characters")
+            cleaned.append({"from": item["from"], "to": item["to"], "text": item["text"]})
 
         return requests.post(
             self.base_url_multiple,
             headers=self.create_header(),
             json={
-                'messages': messages
+                'messages': cleaned
             }
         ).json()
 
