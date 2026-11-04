@@ -8,6 +8,16 @@ _SENDER_ID = re.compile(r"^[A-Za-z0-9]{1,11}$")
 _MSISDN = re.compile(r"^\d{10,15}$")
 _MAX_TEXT = 1600
 _BULK_KEYS = frozenset({"from", "to", "text"})
+_ENDPOINTS = {
+    False: (
+        'https://messaging-service.co.tz/api/sms/v1/text/single',
+        'https://messaging-service.co.tz/api/sms/v1/text/multi',
+    ),
+    True: (
+        'https://messaging-service.co.tz/api/sms/v1/test/text/single',
+        'https://messaging-service.co.tz/api/sms/v1/test/text/multi',
+    ),
+}
 
 
 class NextSmsError(Exception):
@@ -33,10 +43,10 @@ class _Credentials:
 
 class NextSms(object):
 
-    SANDBOX_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/single'
-    SANDBOX_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/multi'
-    PRODUCTION_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/text/single'
-    PRODUCTION_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/text/multi'
+    SANDBOX_URL_SINGLE = _ENDPOINTS[True][0]
+    SANDBOX_URL_MULTIPLE = _ENDPOINTS[True][1]
+    PRODUCTION_URL_SINGLE = _ENDPOINTS[False][0]
+    PRODUCTION_URL_MULTIPLE = _ENDPOINTS[False][1]
 
     Error = NextSmsError
     _sandbox = False
@@ -87,13 +97,7 @@ class NextSms(object):
                 f"sandbox should of of type <class 'bool'> not {type(is_active)}")
 
         self._sandbox = is_active
-
-        if is_active:
-            self.base_url_single = self.SANDBOX_URL_SINGLE
-            self.base_url_multiple = self.SANDBOX_URL_MULTIPLE
-        else:
-            self.base_url_single = self.PRODUCTION_URL_SINGLE
-            self.base_url_multiple = self.PRODUCTION_URL_MULTIPLE
+        self.base_url_single, self.base_url_multiple = _ENDPOINTS[is_active]
 
     def initialize(self, username: str, password: str) -> None:
         """Initialize nextsms access credentials
