@@ -89,7 +89,7 @@ class NextSms(object):
 
         Example:
             >> import nextsms
-            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+            >> sender = nextsms('your username', 'your password')
             >> sender.sandbox = True 
         """
         if not isinstance(is_active, bool):
@@ -178,8 +178,8 @@ class NextSms(object):
         Example:
 
             >> import nextsms 
-            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
-            >> sender.sendsms('hello', '255757294146', 'Neurotech')
+            >> sender = nextsms('your username', 'your password')
+            >> sender.sendsms('hello', '255700000000', 'NEXTSMS')
         """
         if not isinstance(sender_id, str) or _SENDER_ID.fullmatch(sender_id) is None:
             raise ValueError("sender_id should be 1 to 11 letters or digits")
@@ -221,10 +221,10 @@ class NextSms(object):
         Example:
 
             >> import nextsms
-            >> sender = nextsms('KalebuJordan', 'kalebu@opensource') 
+            >> sender = nextsms('your username', 'your password')
             >> messages = [
-                {'from':'NEXTSMS', 'to':'255757294146', 'text':'hello'},
-                {'from':'NEXTSMS', 'to':'255754205561', 'text':'hello'}]           
+                {'from':'NEXTSMS', 'to':'255700000000', 'text':'hello'},
+                {'from':'NEXTSMS', 'to':'255711111111', 'text':'hello'}]           
             >> sender.send_bulk(messages)
         """
         if not isinstance(messages, list) or not messages:
