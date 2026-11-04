@@ -10,6 +10,12 @@ _MAX_TEXT = 1600
 _BULK_KEYS = frozenset({"from", "to", "text"})
 
 
+class NextSmsError(Exception):
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
 class _Credentials:
     __slots__ = ("username", "_token")
 
@@ -32,15 +38,17 @@ class NextSms(object):
     PRODUCTION_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/text/single'
     PRODUCTION_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/text/multi'
 
+    Error = NextSmsError
     _sandbox = False
 
-    def __init__(self, username: str = '', password: str = '', sandbox=False) -> None:
+    def __init__(self, username: str = '', password: str = '', sandbox=False, timeout: float = 10) -> None:
         """Initialize nextsms access credentials
 
         Args:
             username (str): your username for nextsms
             password (str): your login password for nextsms
         """
+        self.timeout = timeout
         self.sandbox = sandbox
         self._user = None
         if username or password:
@@ -187,14 +195,11 @@ class NextSms(object):
             raise TypeError(
                 f"recipient should be of type <class 'str'> or <class 'list'> not {type(recipients)}")
 
-        return requests.post(
-            self.base_url_single,
-            headers=self.create_header(),
-            json={
-                'from': sender_id,
-                'to': to,
-                'text': message
-            }).json()
+        return self._post(self.base_url_single, {
+            'from': sender_id,
+            'to': to,
+            'text': message,
+        })
 
     def send_bulk(self, messages: List[Dict]) -> Dict:
         """[summary]
@@ -234,13 +239,37 @@ class NextSms(object):
                 raise ValueError("message should be 1 to 1600 characters")
             cleaned.append({"from": item["from"], "to": item["to"], "text": item["text"]})
 
-        return requests.post(
-            self.base_url_multiple,
-            headers=self.create_header(),
-            json={
-                'messages': cleaned
-            }
-        ).json()
+        return self._post(self.base_url_multiple, {'messages': cleaned})
+
+    def _post(self, url, payload):
+        try:
+            response = requests.post(
+                url,
+                headers=self.create_header(),
+                json=payload,
+                timeout=self.timeout,
+                verify=True,
+                allow_redirects=False,
+            )
+        except requests.Timeout as exc:
+            raise NextSmsError("NextSMS request timed out") from exc
+        except requests.RequestException as exc:
+            raise NextSmsError("NextSMS request failed") from exc
+        if response.is_redirect or response.status_code >= 400:
+            raise NextSmsError(
+                f"NextSMS rejected the request (HTTP {response.status_code})",
+                status_code=response.status_code,
+            )
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise NextSmsError(
+                f"NextSMS returned a non-JSON body (HTTP {response.status_code})",
+                status_code=response.status_code,
+            ) from exc
+        if not isinstance(body, dict):
+            raise NextSmsError("NextSMS returned an unexpected payload")
+        return body
 
 
 sys.modules[__name__] = NextSms
