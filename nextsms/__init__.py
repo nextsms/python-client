@@ -55,6 +55,8 @@ class NextSms(object):
             raise TypeError(
                 f"sandbox should of of type <class 'bool'> not {type(is_active)}")
 
+        self._sandbox = is_active
+
         if is_active:
             self.base_url_single = self.SANDBOX_URL_SINGLE
             self.base_url_multiple = self.SANDBOX_URL_MULTIPLE
