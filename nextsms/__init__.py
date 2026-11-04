@@ -1,8 +1,22 @@
 import sys
 import requests
 from base64 import b64encode
-from collections import namedtuple
-from typing import List, Dict, Union, Iterable
+from typing import List, Dict, Union
+
+
+class _Credentials:
+    __slots__ = ("username", "_token")
+
+    def __init__(self, username: str, token: str) -> None:
+        self.username = username
+        self._token = token
+
+    def __repr__(self) -> str:
+        return f"Credentials(username={self.username!r}, token='***')"
+
+    @property
+    def authorization(self) -> str:
+        return f"Basic {self._token}"
 
 
 class NextSms(object):
@@ -13,7 +27,6 @@ class NextSms(object):
     PRODUCTION_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/text/multi'
 
     _sandbox = False
-    User = namedtuple('User', 'username password secret_key')
 
     def __init__(self, username: str = '', password: str = '', sandbox=False) -> None:
         """Initialize nextsms access credentials
@@ -26,6 +39,10 @@ class NextSms(object):
         self._user = (None
                       if not all(username and password)
                       else self.create_user(username, password))
+
+    def __repr__(self) -> str:
+        user = self._user.username if self._user else None
+        return f"NextSms(username={user!r}, sandbox={self.sandbox!r})"
 
     @property
     def sandbox(self) -> bool:
@@ -73,8 +90,8 @@ class NextSms(object):
         """
         self._user = self.create_user(username, password)
 
-    def create_user(self, username: str, password: str) -> Iterable:
-        """Create a namedtuple of user credentials
+    def create_user(self, username: str, password: str) -> _Credentials:
+        """Create user credentials.
 
         Args:
             username ([type]): username for nextms
@@ -85,7 +102,7 @@ class NextSms(object):
             TypeError: if password in not of type <class 'str'>
 
         Returns:
-            User: namedtuple datascture to hold user details (username, password, secret_key)
+            _Credentials: username plus the auth token
         """
         if not isinstance(username, str):
             raise TypeError(
@@ -93,11 +110,8 @@ class NextSms(object):
         if not isinstance(password, str):
             raise TypeError(
                 f"password should be of type <class 'str'> not {type(password)}")
-        return self.User(
-            username=username,
-            password=password,
-            secret_key=b64encode(f'{username}:{password}'.encode()).decode()
-        )
+        token = b64encode(f'{username}:{password}'.encode()).decode()
+        return _Credentials(username, token)
 
     def create_header(self) -> Dict:
         """Auto generate json headers to be used in request
@@ -120,7 +134,7 @@ class NextSms(object):
         return {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {self._user.secret_key}'
+            'Authorization': self._user.authorization
         }
 
     def sendsms(self, message: str, recipients: Union[str, List[str]], sender_id: str = "NEXTSMS") -> Dict:
