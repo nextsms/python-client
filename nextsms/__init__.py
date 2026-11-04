@@ -36,9 +36,9 @@ class NextSms(object):
             password (str): your login password for nextsms
         """
         self.sandbox = sandbox
-        self._user = (None
-                      if not all(username and password)
-                      else self.create_user(username, password))
+        self._user = None
+        if username or password:
+            self.initialize(username, password)
 
     def __repr__(self) -> str:
         user = self._user.username if self._user else None
@@ -110,6 +110,10 @@ class NextSms(object):
         if not isinstance(password, str):
             raise TypeError(
                 f"password should be of type <class 'str'> not {type(password)}")
+        if username.strip() == "" or password == "":
+            raise ValueError("username and password are required")
+        if ":" in username or any(c in username or c in password for c in "\r\n"):
+            raise ValueError("username and password have a bad character")
         token = b64encode(f'{username}:{password}'.encode()).decode()
         return _Credentials(username, token)
 
