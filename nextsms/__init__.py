@@ -1,31 +1,72 @@
+import re
 import sys
 import requests
 from base64 import b64encode
-from collections import namedtuple
-from typing import List, Dict, Union, Iterable
+from typing import List, Dict, Union
+
+_SENDER_ID = re.compile(r"^[A-Za-z0-9]{1,11}$")
+_MSISDN = re.compile(r"^\d{10,15}$")
+_MAX_TEXT = 1600
+_BULK_KEYS = frozenset({"from", "to", "text"})
+_ENDPOINTS = {
+    False: (
+        'https://messaging-service.co.tz/api/sms/v1/text/single',
+        'https://messaging-service.co.tz/api/sms/v1/text/multi',
+    ),
+    True: (
+        'https://messaging-service.co.tz/api/sms/v1/test/text/single',
+        'https://messaging-service.co.tz/api/sms/v1/test/text/multi',
+    ),
+}
+
+
+class NextSmsError(Exception):
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class _Credentials:
+    __slots__ = ("username", "_token")
+
+    def __init__(self, username: str, token: str) -> None:
+        self.username = username
+        self._token = token
+
+    def __repr__(self) -> str:
+        return f"Credentials(username={self.username!r}, token='***')"
+
+    @property
+    def authorization(self) -> str:
+        return f"Basic {self._token}"
 
 
 class NextSms(object):
 
-    SANDBOX_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/single'
-    SANDBOX_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/test/text/multi'
-    PRODUCTION_URL_SINGLE = 'https://messaging-service.co.tz/api/sms/v1/text/single'
-    PRODUCTION_URL_MULTIPLE = 'https://messaging-service.co.tz/api/sms/v1/text/multi'
+    SANDBOX_URL_SINGLE = _ENDPOINTS[True][0]
+    SANDBOX_URL_MULTIPLE = _ENDPOINTS[True][1]
+    PRODUCTION_URL_SINGLE = _ENDPOINTS[False][0]
+    PRODUCTION_URL_MULTIPLE = _ENDPOINTS[False][1]
 
+    Error = NextSmsError
     _sandbox = False
-    User = namedtuple('User', 'username password secret_key')
 
-    def __init__(self, username: str = '', password: str = '', sandbox=False) -> None:
+    def __init__(self, username: str = '', password: str = '', sandbox=False, timeout: float = 10) -> None:
         """Initialize nextsms access credentials
 
         Args:
             username (str): your username for nextsms
             password (str): your login password for nextsms
         """
+        self.timeout = timeout
         self.sandbox = sandbox
-        self._user = (None
-                      if not all(username and password)
-                      else self.create_user(username, password))
+        self._user = None
+        if username or password:
+            self.initialize(username, password)
+
+    def __repr__(self) -> str:
+        user = self._user.username if self._user else None
+        return f"NextSms(username={user!r}, sandbox={self.sandbox!r})"
 
     @property
     def sandbox(self) -> bool:
@@ -48,19 +89,15 @@ class NextSms(object):
 
         Example:
             >> import nextsms
-            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+            >> sender = nextsms('your username', 'your password')
             >> sender.sandbox = True 
         """
         if not isinstance(is_active, bool):
             raise TypeError(
                 f"sandbox should of of type <class 'bool'> not {type(is_active)}")
 
-        if is_active:
-            self.base_url_single = self.SANDBOX_URL_SINGLE
-            self.base_url_multiple = self.SANDBOX_URL_MULTIPLE
-        else:
-            self.base_url_single = self.PRODUCTION_URL_SINGLE
-            self.base_url_multiple = self.PRODUCTION_URL_MULTIPLE
+        self._sandbox = is_active
+        self.base_url_single, self.base_url_multiple = _ENDPOINTS[is_active]
 
     def initialize(self, username: str, password: str) -> None:
         """Initialize nextsms access credentials
@@ -71,8 +108,8 @@ class NextSms(object):
         """
         self._user = self.create_user(username, password)
 
-    def create_user(self, username: str, password: str) -> Iterable:
-        """Create a namedtuple of user credentials
+    def create_user(self, username: str, password: str) -> _Credentials:
+        """Create user credentials.
 
         Args:
             username ([type]): username for nextms
@@ -83,7 +120,7 @@ class NextSms(object):
             TypeError: if password in not of type <class 'str'>
 
         Returns:
-            User: namedtuple datascture to hold user details (username, password, secret_key)
+            _Credentials: username plus the auth token
         """
         if not isinstance(username, str):
             raise TypeError(
@@ -91,11 +128,12 @@ class NextSms(object):
         if not isinstance(password, str):
             raise TypeError(
                 f"password should be of type <class 'str'> not {type(password)}")
-        return self.User(
-            username=username,
-            password=password,
-            secret_key=b64encode(f'{username}:{password}'.encode()).decode()
-        )
+        if username.strip() == "" or password == "":
+            raise ValueError("username and password are required")
+        if ":" in username or any(c in username or c in password for c in "\r\n"):
+            raise ValueError("username and password have a bad character")
+        token = b64encode(f'{username}:{password}'.encode()).decode()
+        return _Credentials(username, token)
 
     def create_header(self) -> Dict:
         """Auto generate json headers to be used in request
@@ -118,7 +156,7 @@ class NextSms(object):
         return {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {self._user.secret_key}'
+            'Authorization': self._user.authorization
         }
 
     def sendsms(self, message: str, recipients: Union[str, List[str]], sender_id: str = "NEXTSMS") -> Dict:
@@ -140,27 +178,32 @@ class NextSms(object):
         Example:
 
             >> import nextsms 
-            >> sender = nextsms('KalebuJordan', 'kalebu@opensource')
-            >> sender.sendsms('hello', '255757294146', 'Neurotech')
+            >> sender = nextsms('your username', 'your password')
+            >> sender.sendsms('hello', '255700000000', 'NEXTSMS')
         """
-        if not isinstance(sender_id, str):
-            raise TypeError(
-                f"sender_id should of type <class 'str'> not {type(sender_id)}")
-        if not isinstance(recipients, (str, list)):
+        if not isinstance(sender_id, str) or _SENDER_ID.fullmatch(sender_id) is None:
+            raise ValueError("sender_id should be 1 to 11 letters or digits")
+        if not isinstance(message, str) or message.strip() == "" or len(message) > _MAX_TEXT:
+            raise ValueError("message should be 1 to 1600 characters")
+        if isinstance(recipients, str):
+            if _MSISDN.fullmatch(recipients) is None:
+                raise ValueError("recipient should be 10 to 15 digits")
+            to = recipients
+        elif isinstance(recipients, list) and recipients:
+            to = []
+            for item in recipients:
+                if not isinstance(item, str) or _MSISDN.fullmatch(item) is None:
+                    raise ValueError("recipient should be 10 to 15 digits")
+                to.append(item)
+        else:
             raise TypeError(
                 f"recipient should be of type <class 'str'> or <class 'list'> not {type(recipients)}")
-        if not isinstance(message, str):
-            raise TypeError(
-                f"message should be of type <class 'str'> not {type(message)}")
 
-        return requests.post(
-            self.base_url_single,
-            headers=self.create_header(),
-            json={
-                'from': sender_id,
-                'to': recipients,
-                'text': message
-            }).json()
+        return self._post(self.base_url_single, {
+            'from': sender_id,
+            'to': to,
+            'text': message,
+        })
 
     def send_bulk(self, messages: List[Dict]) -> Dict:
         """[summary]
@@ -178,23 +221,59 @@ class NextSms(object):
         Example:
 
             >> import nextsms
-            >> sender = nextsms('KalebuJordan', 'kalebu@opensource') 
+            >> sender = nextsms('your username', 'your password')
             >> messages = [
-                {'from':'NEXTSMS', 'to':'255757294146', 'text':'hello'},
-                {'from':'NEXTSMS', 'to':'255754205561', 'text':'hello'}]           
+                {'from':'NEXTSMS', 'to':'255700000000', 'text':'hello'},
+                {'from':'NEXTSMS', 'to':'255711111111', 'text':'hello'}]           
             >> sender.send_bulk(messages)
         """
-        if not isinstance(messages, list):
+        if not isinstance(messages, list) or not messages:
             raise TypeError(
                 f"messages should be of type <class 'list'> not type {type(messages)}")
 
-        return requests.post(
-            self.base_url_multiple,
-            headers=self.create_header(),
-            json={
-                'messages': messages
-            }
-        ).json()
+        cleaned = []
+        for index, item in enumerate(messages):
+            if not isinstance(item, dict) or set(item) != _BULK_KEYS:
+                raise ValueError(f"messages[{index}] should have from, to and text only")
+            if not isinstance(item["from"], str) or _SENDER_ID.fullmatch(item["from"]) is None:
+                raise ValueError("sender_id should be 1 to 11 letters or digits")
+            if not isinstance(item["to"], str) or _MSISDN.fullmatch(item["to"]) is None:
+                raise ValueError("recipient should be 10 to 15 digits")
+            if not isinstance(item["text"], str) or item["text"].strip() == "" or len(item["text"]) > _MAX_TEXT:
+                raise ValueError("message should be 1 to 1600 characters")
+            cleaned.append({"from": item["from"], "to": item["to"], "text": item["text"]})
+
+        return self._post(self.base_url_multiple, {'messages': cleaned})
+
+    def _post(self, url, payload):
+        try:
+            response = requests.post(
+                url,
+                headers=self.create_header(),
+                json=payload,
+                timeout=self.timeout,
+                verify=True,
+                allow_redirects=False,
+            )
+        except requests.Timeout as exc:
+            raise NextSmsError("NextSMS request timed out") from exc
+        except requests.RequestException as exc:
+            raise NextSmsError("NextSMS request failed") from exc
+        if response.is_redirect or response.status_code >= 400:
+            raise NextSmsError(
+                f"NextSMS rejected the request (HTTP {response.status_code})",
+                status_code=response.status_code,
+            )
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise NextSmsError(
+                f"NextSMS returned a non-JSON body (HTTP {response.status_code})",
+                status_code=response.status_code,
+            ) from exc
+        if not isinstance(body, dict):
+            raise NextSmsError("NextSMS returned an unexpected payload")
+        return body
 
 
 sys.modules[__name__] = NextSms

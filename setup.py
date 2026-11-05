@@ -14,7 +14,6 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/Kalebu/nextsms',
-    download_url="https://github.com/Kalebu/nextsms/archive/0.2.tar.gz",
     author="Jordan Kalebu",
     author_email="isaackeinstein@gmail.com",
     license="MIT",
@@ -27,19 +26,19 @@ setup(
     ],
 
     install_requires=[
-        'requests',
+        'requests>=2.32.4',
+        'urllib3>=2.8.0',
     ],
 
-    python_requires=">=3.6",
+    python_requires=">=3.10",
 
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Build Tools",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
 )

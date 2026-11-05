@@ -26,11 +26,12 @@ Here an Example how you would do that with this package
 
 ```python
 
+>> import os
 >> import nextsms
->> sender = nextsms('KalebuJordan', 'kalebu@opensource') 
+>> sender = nextsms(os.environ['NEXTSMS_USERNAME'], os.environ['NEXTSMS_PASSWORD'])
 >> messages = [
-    {'from':'NEXTSMS', 'to':'255757294146', 'text':'hello'},
-    {'from':'NEXTSMS', 'to':'255754205561', 'text':'hello'}]           
+    {'from':'NEXTSMS', 'to':'255700000000', 'text':'hello'},
+    {'from':'NEXTSMS', 'to':'255711111111', 'text':'hello'}]
 >> sender.send_bulk(messages)
 
 ```
@@ -41,8 +42,9 @@ By default as you can create a nextsms instance it configure the environment to 
 
 ```python
 
+>> import os
 >> import nextsms
->> sender = nextsms('KalebuJordan', 'kalebu@opensource')
+>> sender = nextsms(os.environ['NEXTSMS_USERNAME'], os.environ['NEXTSMS_PASSWORD'])
 >> sender.sandbox = True 
 
 ```

@@ -1,0 +1,7 @@
+{
+  "name": "nextsms",
+  "private": true,
+  "scripts": {
+    "test": "bun test"
+  }
+}
